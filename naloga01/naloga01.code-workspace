@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "naloga01",
+			"path": "."
+		},
+		{
+			"name": "IoT",
+			"path": ".."
+		},
+		{
+			"name": "naloga01",
+			"path": "naloga01"
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domaci 8 - Potenciometar</title>
+</head>
+
+<body>
+    <p>Ovo je domaci 8 - Potenciometar</p>
+    <button onclick="posaljiJSONSporocilo()">posalji</button>
+    <br>
+    Sporocilo: <input id="JSONSporocilo" size="50" value='{"tipSporocila":"LED","pin":2,"vrednost":1}'>
+    <br>
+
+    <div id="izpis1">Vrednost potenciometra: -</div>
+
+    <script type="text/javascript" charset="utf-8">
+        "use strict";
+
+        let izpis1 = document.getElementById("izpis1");
+        let ws = new WebSocket("ws://10.252.254.48:8888");
+
+        ws.onopen = function () {
+            console.log("Chrome uspešno povezan!");
+        };
+
+        function posaljiJSONSporocilo() {
+            var poruka = document.getElementById("JSONSporocilo").value;
+            ws.send(poruka);
+        }
+
+        ws.onmessage = function (event) {
+            var msg = JSON.parse(event.data);
+            switch (msg.tipSporocila) {
+                case "potenciometar":
+                    izpis1.innerHTML = "Vrednost potenciometra: <b>" + msg.vrednost + "</b>";
+                    break;
+            }
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="sl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket - Fotoupornik in LED</title>
+</head>
+
+<body>
+
+    <button id="pošlji-JSON-sporočilo" onclick="pošljiJSONsporočilo()">pošljiJSONsporočilo</button>
+    <p></p>
+    Sporočilo: <input id="JSONsporočilo" size="50" value='{"tipSporočila": "LED", "pin": 2, "vrednost": 1}'><br>
+    <div id="izpis1">×</div>
+    <div id="izpis2">×</div>
+    <canvas id="platno-1" width="400" height="100" style="border: 1px dashed #099999;"></canvas>
+
+    <script>
+        "use strict";
+        let izpis1 = document.getElementById("izpis1");
+        let izpis2 = document.getElementById("izpis2");
+        let ws = new WebSocket("ws://10.252.254.48:8888");
+        let graf1;
+
+        class Graf {
+            constructor(idPlatna) {
+                this.can1 = document.getElementById(idPlatna);
+                this.platno1 = this.can1.getContext("2d");
+                this.platno1.strokeStyle = "#FF0000";
+                this.x = new Array();
+                this.y = new Array();
+                this.maxGrafX = this.can1.width;
+                this.maxGrafY = this.can1.height;
+                for (let i = 0; i < this.maxGrafX; i++) {
+                    this.x[i] = i;
+                }
+            }
+
+            dodajVrednostAliBrišiIndodaj(yVrednost) {
+                if (this.y.length == this.maxGrafX + 1) {
+                    this.y.splice(0, 1);
+                    this.y.push(yVrednost);
+                }
+                else {
+                    this.y.push(yVrednost);
+                }
+            }
+
+            izriši(yVrednost) {
+                this.dodajVrednostAliBrišiIndodaj(yVrednost);
+                this.platno1.clearRect(0, 0, this.can1.width, this.can1.height);
+                this.platno1.beginPath();
+                for (let i = 0; i < this.y.length; i++) {
+                    this.platno1.lineTo(this.x[i], this.maxGrafY - this.y[i] / 4095 * this.maxGrafY);
+                }
+                this.platno1.stroke();
+            }
+        }
+
+        graf1 = new Graf("platno-1");
+
+        ws.onopen = function () {
+            console.log("Chrome brskalnik se je uspešno povezal na port 8888");
+        };
+
+        ws.onmessage = function (event) {
+            let msg = JSON.parse(event.data);
+            switch (msg.tipSporočila) {
+                case "fotoupornik":
+                    izpis1.innerHTML = "Vrednost fotoupornika: <b>" + msg.vrednost + "</b>";
+                    izpis2.innerHTML = "Prejet JSON paket: " + event.data;
+                    graf1.izriši(msg.vrednost);
+                    break;
+            };
+        };
+
+        function pošljiJSONsporočilo() {
+            let JSONsporočilo = document.getElementById("JSONsporočilo").value;
+            ws.send(JSONsporočilo);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potenciometar Grafikon</title>
+</head>
+
+<body>
+    <p>Pozdravljeni IoT vmesnik</p>
+    <div id="izpis1"></div>
+    <div id="izpis2"></div>
+    <br>
+    <canvas id="platno1" width="400" height="100" style="border: 1px dashed #099999"></canvas>
+
+    <script type="text/javascript" charset="utf-8">
+        "use strict";
+        var graf1;
+        let izpis1 = document.getElementById("izpis1");
+        let izpis2 = document.getElementById("izpis2");
+
+        class Graf {
+            constructor(idPlatna) {
+                this.can1 = document.getElementById(idPlatna);
+                this.plat1 = this.can1.getContext("2d");
+                this.plat1.strokeStyle = '#ff0000';
+                this.x = new Array();
+                this.y = new Array();
+                this.maxGrafX = this.can1.width;
+                this.maxGrafY = this.can1.height;
+                for (var i = 0; i < this.maxGrafX; i++) {
+                    this.x[i] = i;
+                }
+            }
+            dodajVrednostAliBrisiInDodaj(yVrednost) {
+                if (this.y.length == this.maxGrafX + 1) {
+                    this.y.splice(0, 1);
+                    this.y[this.maxGrafX] = yVrednost;
+                }
+                else {
+                    this.y.push(yVrednost);
+                }
+            }
+            izrisi(yVrednost) {
+                this.dodajVrednostAliBrisiInDodaj(yVrednost);
+                this.plat1.clearRect(0, 0, this.maxGrafX, this.maxGrafY);
+                this.plat1.beginPath();
+                for (var i = 0; i < this.y.length; i++) {
+                    this.plat1.lineTo(this.x[i], this.maxGrafY - this.y[i] / 4095 * this.maxGrafY);
+                }
+                this.plat1.stroke();
+            }
+        }
+
+        graf1 = new Graf("platno1");
+
+        // Popravljeno na tvoju novu IP adresu i port 8888
+        let ws = new WebSocket("ws://10.252.254.48:8888");
+
+        ws.onopen = function () {
+            console.log("Chrome uspesno povezan na port 8888!");
+        };
+
+        ws.onmessage = function (event) {
+            var msg = JSON.parse(event.data);
+            // Promenjeno sa tipSporocila na tipPoruke da se poklapa sa serverom
+            switch (msg.tipPoruke) {
+                case "potenciometar":
+                    izpis1.innerHTML = "Sirov JSON: " + event.data;
+                    izpis2.innerHTML = "Trenutna vrednost: <b>" + msg.vrednost + "</b>";
+                    graf1.izrisi(msg.vrednost);
+                    break;
+            };
+        };
+    </script>
+</body>
+
+</html>
