@@ -3,22 +3,20 @@
 // #include "WebSocketsClient.h"
 // #include <ArduinoJson.h>
 
-// // --- TVOJI PODACI ZA WIFI I LINUX SERVER ---
 // const char *ssid = "nadin";
 // const char *password = "12345678";
-// const char *serverIP = "10.252.254.48"; // Tvoj Linux IP (.48)
+// const char *serverIP = "10.252.254.201"; // Tvoja IP adresa (.201)
+// // const char *serverIP = " 192.168.1.162";
 
 // // --- JASNO DEFINIRANI PINOVI ---
-// const int pinGlavnaLED = 4;        // Žuta LED je na PINU 4
-// const int pinUgradjenaLED = 2;     // Ugrađena plava LED na ESP32 (Služi samo za alarm)
-// const int nozicaFotoupornika = 36; // Fotootpornik je siguran na VP (36)
+// const int pinGlavnaLED = 4;        // Žuta LED (Radi stalno od početka)
+// const int pinUgradjenaLED = 2;     // Ugrađena plava LED (Pali se samo za ALARM)
+// const int nozicaFotoupornika = 36; // Fotootpornik (Prati svjetlo žute diode)
 
 // int vrednostFotoupornika;
 // int prethodnaVrednostFoto = 0;
 
-// bool glavnaLEDMoraSvetleti = false;
 // bool uAlarmu = false;
-// unsigned long vremeNaredbe = 0;
 // unsigned long prethodnoVremeTreptanja = 0;
 // bool stanjeUgradjeneLED = false;
 
@@ -34,25 +32,18 @@
 //             return;
 
 //         const char *tip = doc["tipSporočila"];
+
+//         // Gumbi na webu ti sada služe za RUČNI RESET ALARMA ako zatreba
 //         if (tip != nullptr && strcmp(tip, "LED") == 0)
 //         {
 //             int vrednost = doc["vrednost"];
-//             if (vrednost == 1) // Kliknuto VKLOP
+//             if (vrednost == 0) // Ako klikneš IZKLOP / RESET na webu
 //             {
-//                 glavnaLEDMoraSvetleti = true;
-//                 vremeNaredbe = millis(); // Počinje odbrojavanje od 3 sekunde
 //                 uAlarmu = false;
-//                 digitalWrite(pinGlavnaLED, HIGH);   // Pali žutu na pinu 4
-//                 digitalWrite(pinUgradjenaLED, LOW); // Gasi plavu alarmnu
-//             }
-//             else // Kliknuto IZKLOP
-//             {
-//                 glavnaLEDMoraSvetleti = false;
-//                 uAlarmu = false;
-//                 digitalWrite(pinGlavnaLED, LOW);
-//                 digitalWrite(pinUgradjenaLED, LOW);
+//                 digitalWrite(pinGlavnaLED, HIGH);   // Ponovno upali glavnu diodu
+//                 digitalWrite(pinUgradjenaLED, LOW); // Ugasi alarmnu plavu
 
-//                 // Reset statusa na Linux webu
+//                 // Javi webu da je sustav ponovno u redu
 //                 DynamicJsonDocument statusDoc(128);
 //                 statusDoc["tipSporočila"] = "status";
 //                 statusDoc["stanje"] = "OK";
@@ -78,11 +69,12 @@
 //     webSocket.begin(serverIP, 8811);
 //     webSocket.onEvent(webSocketEvent);
 
-//     // KLJUČNI DIO: Postavljamo pin 4 kao IZLAZ da može dati struju diodi!
 //     pinMode(pinGlavnaLED, OUTPUT);
 //     pinMode(pinUgradjenaLED, OUTPUT);
 
-//     digitalWrite(pinGlavnaLED, LOW);
+//     // --- KLJUČNA IZMJENA ---
+//     // Žuta dioda se pali ODMAH na startu i sustav radi normalno
+//     digitalWrite(pinGlavnaLED, HIGH);
 //     digitalWrite(pinUgradjenaLED, LOW);
 // }
 
@@ -90,20 +82,21 @@
 // {
 //     webSocket.loop();
 
-//     // Čitanje fotootpornika s VP pina
+//     // Stalno čitamo vrijednost fotootpornika
 //     vrednostFotoupornika = analogRead(nozicaFotoupornika);
 
-//     // --- LOGIKA: PREGOREVANJE NAKON TOČNO 3 SEKUNDE ---
-//     if (glavnaLEDMoraSvetleti && !uAlarmu)
+//     // --- LOGIKA NADZORA ---
+//     // Ako je sustav u redu (nije već u alarmu), pratimo pad svjetla
+//     if (!uAlarmu)
 //     {
-//         if (millis() - vremeNaredbe > 3000)
+//         // Ako vrijednost padne ispod 2000 (prekrio si prstom ili ugasio diodu)
+//         if (vrednostFotoupornika < 2000)
 //         {
-//             uAlarmu = true;
-//             glavnaLEDMoraSvetleti = false;
+//             uAlarmu = true; // Aktiviraj alarmno stanje
 
-//             digitalWrite(pinGlavnaLED, LOW); // Žuta se gasi na pinu 4 (pregori)
+//             digitalWrite(pinGlavnaLED, LOW); // Možemo je ugasiti jer simuliramo da je pala/crkla
 
-//             // Javljamo Linux serveru kvar
+//             // Odmah šaljemo webu poruku o kvaru da pocrveni ekran
 //             DynamicJsonDocument statusDoc(128);
 //             statusDoc["tipSporočila"] = "status";
 //             statusDoc["stanje"] = "ALARM";
@@ -113,7 +106,7 @@
 //         }
 //     }
 
-//     // Dok traje alarm, ugrađena plava LED na pločici (pin 2) bljeska
+//     // Ako se aktivirao alarm, plava ugrađena LED počinje bljeskati
 //     if (uAlarmu)
 //     {
 //         if (millis() - prethodnoVremeTreptanja > 150)
@@ -124,7 +117,7 @@
 //         }
 //     }
 
-//     // Slanje vrijednosti fotootpornika na Linux grafikon
+//     // Slanje vrijednosti na grafikon radi vizualizacije
 //     if (abs(vrednostFotoupornika - prethodnaVrednostFoto) > 20)
 //     {
 //         DynamicJsonDocument fotoDoc(128);
@@ -136,5 +129,5 @@
 //         prethodnaVrednostFoto = vrednostFotoupornika;
 //     }
 
-//     delay(10);
+//     delay(100);
 // }

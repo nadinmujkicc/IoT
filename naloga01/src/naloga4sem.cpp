@@ -5,7 +5,7 @@
 
 // const char *ssid = "nadin";
 // const char *password = "12345678";
-// const char *serverIP = "10.252.254.48";
+// const char *serverIP = "10.252.254.201";
 
 // const int pinPotenciometar = 34;
 

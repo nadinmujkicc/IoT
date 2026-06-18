@@ -5,16 +5,15 @@
 
 const char *ssid = "nadin";
 const char *password = "12345678";
-const char *serverIP = "10.252.254.48";
+const char *serverIP = "10.252.254.201";
 
 const int pinPotenciometar = 34;
-const int pinLedPWM = 2; // Ugrađena plava LED podržava PWM
+const int pinLedPWM = 2;
 
-// PI regulator parametri
-float Kp = 0.5;  // Proporcionalno pojačanje
-float Ki = 0.05; // Integracijsko pojačanje
+float Kp = 0.5;
+float Ki = 0.05;
 
-int zeljenaVrednost = 2048; // Početna željena vrijednost (mijenja se preko weba)
+int zeljenaVrednost = 2048;
 float integralVrednost = 0;
 
 unsigned long prethodnoVreme = 0;
@@ -53,8 +52,7 @@ void setup()
 
     pinMode(pinPotenciometar, INPUT);
 
-    // Konfiguracija PWM-a za LED na ESP32
-    ledcSetup(0, 5000, 8); // Kanal 0, 5kHz, 8-bitna rezolucija (0-255)
+    ledcSetup(0, 5000, 8);
     ledcAttachPin(pinLedPWM, 0);
 }
 
@@ -67,11 +65,9 @@ void loop()
 
     int stvarnaVrednost = analogRead(pinPotenciometar);
 
-    // PI algoritam
     int greska = zeljenaVrednost - stvarnaVrednost;
-    integralVrednost += greska * 0.05; // 0.05s je period uzorkovanja
+    integralVrednost += greska * 0.05;
 
-    // Ograničenje integrala (anti-windup) da ne ode u beskonačnost
     if (integralVrednost > 255)
         integralVrednost = 255;
     if (integralVrednost < 0)
@@ -79,10 +75,8 @@ void loop()
 
     float izlazPI = (Kp * greska) + (Ki * integralVrednost);
 
-    // Ograničenje PWM izlaza na raspon 0-255
     int pwmVrednost = constrain((int)izlazPI, 0, 255);
 
-    // Upravljanje svjetlinom LED diode
     ledcWrite(0, pwmVrednost);
 
     if (millis() - prethodnoVreme > 50)
